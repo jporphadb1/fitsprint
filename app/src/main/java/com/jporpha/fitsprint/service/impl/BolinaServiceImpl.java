@@ -41,7 +41,7 @@ public class BolinaServiceImpl implements BolinaService {
     @Override
     public BolinaResponse criar(BolinaRequest request) {
         validarTamanho(request.tamanho());
-        Sprint sprintAtivo = activeSprintResolver.resolve(CurrentUser.teamId());
+        Sprint sprintAtivo = activeSprintResolver.resolve(CurrentUser.resolveTeamId(request.teamId()));
 
         Bolina bolina = Bolina.builder()
                 .titulo(request.titulo())
@@ -57,8 +57,8 @@ public class BolinaServiceImpl implements BolinaService {
     }
 
     @Override
-    public List<BolinaResponse> listarPriorizado() {
-        Sprint sprintAtivo = activeSprintResolver.resolve(CurrentUser.teamId());
+    public List<BolinaResponse> listarPriorizado(Long teamId) {
+        Sprint sprintAtivo = activeSprintResolver.resolve(CurrentUser.resolveTeamId(teamId));
         return bolinaRepository.findAllBySprintIdAndEliminadoFalse(sprintAtivo.getId()).stream()
                 .sorted(BacklogOrdenacao.porPrioridade())
                 .map(mapper::toResponse)
@@ -135,6 +135,10 @@ public class BolinaServiceImpl implements BolinaService {
     }
 
     private Bolina buscarEntidade(Long id) {
+        if (CurrentUser.isSuperAdmin()) {
+            return bolinaRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Bolina não encontrada: " + id));
+        }
         return bolinaRepository.findByIdAndTeamId(id, CurrentUser.teamId())
                 .orElseThrow(() -> new ResourceNotFoundException("Bolina não encontrada: " + id));
     }

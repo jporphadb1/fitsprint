@@ -35,7 +35,8 @@ public class FiltrosServiceImpl implements FiltrosService {
     }
 
     @Override
-    public List<BolinaResponse> vistaPrincipal(Long developerId, Boolean semResponsavel, TaskStatus estado, ZonaOperativa zona) {
+    public List<BolinaResponse> vistaPrincipal(Long teamId, Long developerId, Boolean semResponsavel,
+                                                TaskStatus estado, ZonaOperativa zona) {
         Predicate<Bolina> filtro = b -> true;
 
         if (Boolean.TRUE.equals(semResponsavel)) {
@@ -50,15 +51,15 @@ public class FiltrosServiceImpl implements FiltrosService {
             filtro = filtro.and(b -> b.getZona() == zona);
         }
 
-        return bolinasDoSprintAtivo().filter(filtro)
+        return bolinasDoSprintAtivo(teamId).filter(filtro)
                 .sorted(BacklogOrdenacao.porPrioridade())
                 .map(mapper::toResponse)
                 .toList();
     }
 
     @Override
-    public List<BolinaResponse> vistaUrgencias() {
-        return bolinasDoSprintAtivo()
+    public List<BolinaResponse> vistaUrgencias(Long teamId) {
+        return bolinasDoSprintAtivo(teamId)
                 .filter(b -> b.getZona() == ZonaOperativa.CONTINUIDAD_OPERATIVA)
                 .sorted(BacklogOrdenacao.porPrioridade())
                 .map(mapper::toResponse)
@@ -66,12 +67,12 @@ public class FiltrosServiceImpl implements FiltrosService {
     }
 
     @Override
-    public List<DisponibilidadeDeveloperResponse> vistaDisponibilidade() {
-        return ocupacaoService.disponibilidadePorDeveloper();
+    public List<DisponibilidadeDeveloperResponse> vistaDisponibilidade(Long teamId) {
+        return ocupacaoService.disponibilidadePorDeveloper(teamId);
     }
 
-    private Stream<Bolina> bolinasDoSprintAtivo() {
-        Sprint sprintAtivo = activeSprintResolver.resolve(CurrentUser.teamId());
+    private Stream<Bolina> bolinasDoSprintAtivo(Long teamId) {
+        Sprint sprintAtivo = activeSprintResolver.resolve(CurrentUser.resolveTeamId(teamId));
         return bolinaRepository.findAllBySprintIdAndEliminadoFalse(sprintAtivo.getId()).stream();
     }
 }

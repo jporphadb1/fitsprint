@@ -37,16 +37,16 @@ public class OcupacaoServiceImpl implements OcupacaoService {
     }
 
     @Override
-    public List<BolinaResponse> mapaAlocacao() {
-        Sprint sprintAtivo = activeSprintResolver.resolve(CurrentUser.teamId());
+    public List<BolinaResponse> mapaAlocacao(Long teamIdParam) {
+        Sprint sprintAtivo = activeSprintResolver.resolve(CurrentUser.resolveTeamId(teamIdParam));
         return bolinaRepository.findAllBySprintIdAndEliminadoFalse(sprintAtivo.getId()).stream()
                 .map(bolinaMapper::toResponse)
                 .toList();
     }
 
     @Override
-    public List<DisponibilidadeDeveloperResponse> disponibilidadePorDeveloper() {
-        Long teamId = CurrentUser.teamId();
+    public List<DisponibilidadeDeveloperResponse> disponibilidadePorDeveloper(Long teamIdParam) {
+        Long teamId = CurrentUser.resolveTeamId(teamIdParam);
         Sprint sprintAtivo = activeSprintResolver.resolve(teamId);
 
         List<Developer> developers = developerRepository.findAllByTeamId(teamId);

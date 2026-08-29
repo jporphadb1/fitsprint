@@ -153,4 +153,16 @@ El mapeo pedido de roles: Sofía (Scrum Master/Tech Lead) = `ADMIN`, Martín (De
 **Falta / asumido:**
 - `Team.remover` y `User.remover` son hard delete (sin soft-delete ni cascada). Si existen Developers/Users/Sprints/Bolinas referenciando el team, el delete va a fallar por FK constraint — no implementé cascada porque no fue pedido; queda como limitación conocida.
 - No armé un segundo team real en el seeder para probar el camino "ADMIN intenta operar sobre team ajeno → rechazado"; la lógica de `resolveTeamId` se revisó por código pero ese caso específico no se ejecutó contra la app corriendo.
-- Sigue pendiente aplicar `@PreAuthorize` + `resolveTeamId` a los endpoints existentes de Bolina (importância/prioridade-final → ADMIN+SUPER_ADMIN; resto → USER+ADMIN+SUPER_ADMIN) y a las vistas de lectura (Buffer/Capacidade/Ocupação/Filtros → USER+ADMIN+SUPER_ADMIN) — se hace en el próximo bloque de este mismo pedido.
+---
+
+## Autorización (parte 2) — Bolina y vistas de lectura
+
+**Hecho:**
+- `BolinaController`: `@PreAuthorize("hasAnyRole('USER','ADMIN','SUPER_ADMIN')")` a nivel de clase (cubre crear, listar, buscar, editar tamaño/valor, estado, fuera, responsável, remover). Los dos métodos que el usuario pidió elevar quedan con `@PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")` a nivel de método, que en Spring Security siempre gana sobre la anotación de clase: `atualizarImportancia` y `atualizarPrioridadeFinal`.
+- `BufferController`, `CapacidadeController`, `OcupacaoController`, `FiltrosController`: `@PreAuthorize("hasAnyRole('USER','ADMIN','SUPER_ADMIN')")` a nivel de clase — los 5 módulos de lectura (backlog, buffer, capacidade, ocupação, filtros) quedan con el mismo tier, tal como se pidió.
+- Retrofit de `resolveTeamId` en todos esos flujos para que SUPER_ADMIN pueda realmente usarlos: `BolinaRequest` ahora tiene `teamId` opcional (solo se usa en creación), `GET /api/v1/bolinas` y todas las vistas de lectura aceptan `?teamId=` opcional. Para operaciones sobre un recurso puntual por id (`buscarPorId`, `atualizar`, PATCH de importância/prioridade/estado/fuera/responsável, `remover`), SUPER_ADMIN bypassea el filtro de team (`findById` liso) igual que ya hacía en Developer/Sprint.
+- Probado end-to-end la matriz completa: USER puede crear/editar tamaño-valor/estado pero no importância/prioridade-final (403 en ambos, 200 para ADMIN); SUPER_ADMIN sin `teamId` recibe 422 tanto en crear como en listar Bolinas y en `GET /buffer`; con `teamId=1` responde 200/201 normalmente; los 7 endpoints de lectura (buffer, capacidade, ocupação/mapa, ocupação/disponibilidade, vistas/principal, vistas/urgencias, vistas/disponibilidade) responden 200 para USER.
+
+**Asumido — endpoints de Bolina sin instrucción explícita del usuario, resueltos por juicio propio y documentados acá:**
+- `estado`, `fuera`, `responsável` y `remover` quedaron en el tier general (USER+ADMIN+SUPER_ADMIN), igual que crear/editar tamaño-valor. Razón: el usuario solo pidió elevar explícitamente "importância manual y prioridade final manual"; `responsável` además ya estaba explícitamente definido como USER+ADMIN sin exclusividad administrativa desde el módulo Ocupação. No hay señal en la spec para tratar `estado`/`fuera`/`remover` de otra forma, así que no inventé una restricción adicional no pedida.
+- Si en algún momento se decide que el soft-delete (`remover`) debería ser más restrictivo que el resto, es un cambio de una sola línea (mover el `@PreAuthorize` de clase a método en `BolinaController.remover`).

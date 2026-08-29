@@ -29,8 +29,8 @@ public class CapacidadeServiceImpl implements CapacidadeService {
     }
 
     @Override
-    public CapacidadeConsolidadaResponse consultar() {
-        Long teamId = CurrentUser.teamId();
+    public CapacidadeConsolidadaResponse consultar(Long teamIdParam) {
+        Long teamId = CurrentUser.resolveTeamId(teamIdParam);
         Sprint sprintAtivo = activeSprintResolver.resolve(teamId);
 
         List<Developer> developers = developerRepository.findAllByTeamId(teamId);

@@ -26,8 +26,8 @@ public class BufferServiceImpl implements BufferService {
     }
 
     @Override
-    public BufferResponse calcular() {
-        Long teamId = CurrentUser.teamId();
+    public BufferResponse calcular(Long teamIdParam) {
+        Long teamId = CurrentUser.resolveTeamId(teamIdParam);
         Sprint sprintAtivo = activeSprintResolver.resolve(teamId);
 
         int capacidadeTotalSprint = developerRepository.sumCapacidadeTotalByTeamId(teamId);

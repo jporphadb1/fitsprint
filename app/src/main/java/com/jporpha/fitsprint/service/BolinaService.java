@@ -10,8 +10,11 @@ public interface BolinaService {
 
     BolinaResponse criar(BolinaRequest request);
 
-    /** Backlog priorizado do sprint ativo do time corrente, já ordenado (sem filtros). */
-    List<BolinaResponse> listarPriorizado();
+    /**
+     * Backlog priorizado do sprint ativo, já ordenado (sem filtros).
+     * {@code teamId} nulo usa o time do usuário corrente; SUPER_ADMIN deve informá-lo.
+     */
+    List<BolinaResponse> listarPriorizado(Long teamId);
 
     BolinaResponse buscarPorId(Long id);
 
