@@ -129,3 +129,28 @@ Registro incremental: qué se hizo, qué falta, qué se asumió. Un bloque por c
 ## Cierre del scaffold inicial
 
 Los 6 bloques pedidos (skeleton transversal + 5 módulos de `scope_features_context.md`) están implementados, compilados y probados manualmente end-to-end sobre H2 en cada commit. Pendiente real para un siguiente paso: frontend estático (hoy es un placeholder), tests automatizados, y las decisiones marcadas como "Asumido" en cada bloque — en particular el mapeo entre roles técnicos (`SUPER_ADMIN`/`ADMIN`/`USER`) y las personas de negocio (PO/Scrum Master/Developer) si se quiere restringir endpoints por rol más adelante.
+
+---
+
+## Autorización — @PreAuthorize según discovery/persona/Sofia_context.md
+
+El mapeo pedido de roles: Sofía (Scrum Master/Tech Lead) = `ADMIN`, Martín (Developer) = `USER`, Valentina (Super Admin) = `SUPER_ADMIN`. La tabla de permisos de Valentina confirma explícitamente *"É o único papel não limitado por team_id"* pero que sí opera "Operação funcional de sprint por equipe... quando necessário" — es decir, SUPER_ADMIN no tiene team propio, pero puede actuar sobre un team_id explícito cuando lo necesita.
+
+**Decisión de diseño derivada de ese matiz — `CurrentUser.resolveTeamId(Long requestedTeamId)` (nuevo en `security/CurrentUser.java`):**
+- SUPER_ADMIN: debe informar `teamId` explícito en el request (query param o campo del body); si no lo informa, `BusinessRuleException` (422). No se le permite "adivinar" un team propio porque no tiene.
+- ADMIN/USER: usan siempre su propio `teamId` del JWT; si informan un `teamId` distinto al propio, `BusinessRuleException` (evita que un ADMIN opere sobre otro team aunque lo pida explícitamente).
+- Para operaciones sobre un recurso puntual por id (buscar/editar/eliminar un Developer o Sprint específico), SUPER_ADMIN se resuelve con `findById` liso (bypassea el filtro de team, consistente con "no limitado por team_id"); ADMIN/USER siguen usando `findByIdAndTeamId`.
+
+**Hecho — CRUD nuevos, no pedidos como módulo pero necesarios para poder asegurar la matriz de permisos:**
+- `Team` CRUD global (`POST/GET/GET{id}/PUT/DELETE /api/v1/teams`) — `@PreAuthorize("hasRole('SUPER_ADMIN')")` a nivel de controller.
+- `User` CRUD global (`POST/GET/GET{id}/PUT/DELETE /api/v1/users`) — mismo `@PreAuthorize`. Valida email único, hashea password con `PasswordEncoder`, exige `teamId` para ADMIN/USER y lo fuerza a `null` para SUPER_ADMIN.
+- `Developer` CRUD acotado a equipo (`POST/GET/GET{id}/PUT/DELETE /api/v1/developers`) — `@PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")`. `GET` y `POST` aceptan `teamId` opcional (obligatorio solo para SUPER_ADMIN) vía `resolveTeamId`.
+- `Sprint` create/activate/close (`POST /api/v1/sprints`, `PATCH .../ativar`, `PATCH .../fechar`) — mismo `@PreAuthorize`. **Decisión de diseño:** `criar` deja el sprint en `CLOSED` (no lo activa); solo `ativar` aplica la regla "único ACTIVE por team" (cierra automáticamente el que estuviera activo). Separar create de activate fue un pedido explícito del usuario, y el enum `SprintStatus` no tiene un tercer estado tipo `DRAFT`, así que "recién creado, aún no activo" se modela como `CLOSED`.
+- `@EnableMethodSecurity` agregado a `SecurityConfig` para habilitar `@PreAuthorize`.
+
+**Probado end-to-end:** Team/User creación como SUPER_ADMIN (201) y como ADMIN/USER (403 en ambos); Developer creación como ADMIN sin teamId (usa el propio, 201), como USER (403), como SUPER_ADMIN sin teamId (422) y con teamId (201); Sprint creación como ADMIN (201, CLOSED) y como USER (403); activar Sprint 2 cierra automáticamente Sprint 1 y el módulo Capacidade pasa a leer sobre el sprint recién activado (confirmado por HTTP).
+
+**Falta / asumido:**
+- `Team.remover` y `User.remover` son hard delete (sin soft-delete ni cascada). Si existen Developers/Users/Sprints/Bolinas referenciando el team, el delete va a fallar por FK constraint — no implementé cascada porque no fue pedido; queda como limitación conocida.
+- No armé un segundo team real en el seeder para probar el camino "ADMIN intenta operar sobre team ajeno → rechazado"; la lógica de `resolveTeamId` se revisó por código pero ese caso específico no se ejecutó contra la app corriendo.
+- Sigue pendiente aplicar `@PreAuthorize` + `resolveTeamId` a los endpoints existentes de Bolina (importância/prioridade-final → ADMIN+SUPER_ADMIN; resto → USER+ADMIN+SUPER_ADMIN) y a las vistas de lectura (Buffer/Capacidade/Ocupação/Filtros → USER+ADMIN+SUPER_ADMIN) — se hace en el próximo bloque de este mismo pedido.

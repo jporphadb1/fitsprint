@@ -11,4 +11,6 @@ public interface SprintRepository extends JpaRepository<Sprint, Long> {
     Optional<Sprint> findByTeamIdAndStatus(Long teamId, SprintStatus status);
 
     List<Sprint> findAllByTeamId(Long teamId);
+
+    Optional<Sprint> findByIdAndTeamId(Long id, Long teamId);
 }
