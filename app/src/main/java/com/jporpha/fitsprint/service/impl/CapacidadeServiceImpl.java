@@ -9,6 +9,7 @@ import com.jporpha.fitsprint.security.CurrentUser;
 import com.jporpha.fitsprint.service.ActiveSprintResolver;
 import com.jporpha.fitsprint.service.CapacidadeService;
 import com.jporpha.fitsprint.service.OcupacaoCalculator;
+import com.jporpha.fitsprint.service.OcupacaoCalculator.Ocupacao;
 import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Service;
@@ -33,11 +34,11 @@ public class CapacidadeServiceImpl implements CapacidadeService {
         Sprint sprintAtivo = activeSprintResolver.resolve(teamId);
 
         List<Developer> developers = developerRepository.findAllByTeamId(teamId);
-        Map<Long, Integer> ocupacaoPorDeveloper = ocupacaoCalculator.calcularOcupacaoPorDeveloper(sprintAtivo.getId());
+        Map<Long, Ocupacao> ocupacaoPorDeveloper = ocupacaoCalculator.calcularOcupacaoPorDeveloper(sprintAtivo.getId());
 
         List<DeveloperCapacidadeResponse> porDeveloper = developers.stream()
                 .map(developer -> {
-                    int usada = ocupacaoPorDeveloper.getOrDefault(developer.getId(), 0);
+                    int usada = ocupacaoPorDeveloper.getOrDefault(developer.getId(), OcupacaoCalculator.VAZIA).storyPoints();
                     int total = developer.getCapacidadeTotal() == null ? 0 : developer.getCapacidadeTotal();
                     return new DeveloperCapacidadeResponse(developer.getId(), developer.getNome(), total, usada, total - usada);
                 })

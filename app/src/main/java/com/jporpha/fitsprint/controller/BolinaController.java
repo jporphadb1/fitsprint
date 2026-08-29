@@ -6,6 +6,7 @@ import com.jporpha.fitsprint.dto.EstadoRequest;
 import com.jporpha.fitsprint.dto.FueraRequest;
 import com.jporpha.fitsprint.dto.ImportanciaRequest;
 import com.jporpha.fitsprint.dto.PrioridadeFinalRequest;
+import com.jporpha.fitsprint.dto.ResponsavelRequest;
 import com.jporpha.fitsprint.service.BolinaService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -71,6 +72,11 @@ public class BolinaController {
     @PatchMapping("/{id}/fuera")
     public BolinaResponse atualizarFuera(@PathVariable Long id, @Valid @RequestBody FueraRequest request) {
         return bolinaService.atualizarFuera(id, request.fuera());
+    }
+
+    @PatchMapping("/{id}/responsavel")
+    public BolinaResponse atualizarResponsavel(@PathVariable Long id, @RequestBody ResponsavelRequest request) {
+        return bolinaService.atualizarResponsavel(id, request.developerId());
     }
 
     @DeleteMapping("/{id}")

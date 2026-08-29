@@ -87,3 +87,21 @@ Registro incremental: qué se hizo, qué falta, qué se asumió. Un bloque por c
 
 **Asumido:**
 - Igual que en Buffer, `capacidadeDisponivel` puede ser negativo (developer sobrecargado) — mostrarlo así es información, no un error; la señalización explícita de sobrecarga (booleano/flag) es responsabilidad del módulo Ocupação e avanço, no de este.
+
+---
+
+## Módulo 4: Ocupação e avanço
+
+**Hecho:**
+- `PATCH /api/v1/bolinas/{id}/responsavel` (vive en `BolinaController`/`BolinaService`, no en un controller separado, porque muta directamente el recurso Bolina): asigna, reasigna o desasigna (`developerId: null`) el responsable. Valida que el developer pertenezca al mismo team que la bolina (`BusinessRuleException` si no); no hay restricción por rol técnico — ADMIN y USER pueden ambos, sin exclusividad administrativa, tal como pide el spec.
+- `GET /api/v1/ocupacao/mapa`: todas las bolinas no eliminadas del sprint activo (incluye `fuera` — solo se ocultan las eliminadas, `fuera` sigue visible con su flag ya presente en `BolinaResponse`), con responsable o `developerNome: null` ("Sin asignar").
+- `GET /api/v1/ocupacao/disponibilidade`: por developer, capacidad total, ocupación actual, disponible, cantidad de tareas y `status` (`SEM_TAREFAS` / `DENTRO_DA_CAPACIDADE` / `SOBRECARREGADO`). Sobrecarga se compara contra 0 cuando el developer no tiene capacidad configurada (ya cubierto porque `capacidadeTotal` nunca es null en el cálculo).
+- Refactor de `OcupacaoCalculator`: ahora devuelve `Map<Long, Ocupacao(storyPoints, quantidadeTarefas)>` en vez de solo la suma, porque el módulo necesitaba también el conteo de tareas para decidir `SEM_TAREFAS`. Actualicé `CapacidadeServiceImpl` (módulo 3) para usar el nuevo tipo — mismo cálculo, un solo lugar.
+- Reprobé el módulo 3 (`GET /api/v1/capacidade`) con datos reales de asignación, como quedó pendiente en su bloque: confirma `capacidadeUsada`/`capacidadeDisponivel` correctos con Carla sobrecargada (10/8, disponible -2).
+- Probado end-to-end: asignar 2 tareas al mismo developer hasta sobrecargarlo (`SOBRECARREGADO`), reasignar una a otro developer (ambos vuelven a `DENTRO_DA_CAPACIDADE`), desasignar (`SEM_TAREFAS`), developer inexistente → 404, mapa de alocación reflejando responsables y "Sin asignar" correctamente.
+
+**Falta:**
+- Nada pendiente de las 4 features del módulo. "Vista operacional limpa" (ocultar eliminadas, sin histórico intermedio) ya queda cubierta porque el mapa siempre relee en runtime desde `findAllBySprintIdAndEliminadoFalse` — no hay estado persistido de ocupación que pueda desincronizarse.
+
+**Asumido:**
+- No validé "developer pertenece al mismo team que la bolina" contra un segundo team real (no armé un segundo team en el seeder) — la lógica se revisó por código pero solo se probó el camino feliz (mismo team) y el camino de developer inexistente. Si se agrega un segundo team al seeder más adelante, vale la pena reprobar ese caso específico.

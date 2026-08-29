@@ -25,5 +25,11 @@ public interface BolinaService {
 
     BolinaResponse atualizarFuera(Long id, boolean fuera);
 
+    /**
+     * Atribui, reatribui ou desatribui (developerId nulo) o responsável.
+     * Módulo Ocupação e avanço: ADMIN e USER podem atribuir, sem exclusividade administrativa.
+     */
+    BolinaResponse atualizarResponsavel(Long id, Long developerId);
+
     void remover(Long id);
 }

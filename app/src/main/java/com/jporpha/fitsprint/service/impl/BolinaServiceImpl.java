@@ -3,6 +3,7 @@ package com.jporpha.fitsprint.service.impl;
 import com.jporpha.fitsprint.dto.BolinaRequest;
 import com.jporpha.fitsprint.dto.BolinaResponse;
 import com.jporpha.fitsprint.entity.Bolina;
+import com.jporpha.fitsprint.entity.Developer;
 import com.jporpha.fitsprint.entity.Importancia;
 import com.jporpha.fitsprint.entity.Sprint;
 import com.jporpha.fitsprint.entity.TaskStatus;
@@ -10,6 +11,7 @@ import com.jporpha.fitsprint.exception.BusinessRuleException;
 import com.jporpha.fitsprint.exception.ResourceNotFoundException;
 import com.jporpha.fitsprint.mapper.BolinaMapper;
 import com.jporpha.fitsprint.repository.BolinaRepository;
+import com.jporpha.fitsprint.repository.DeveloperRepository;
 import com.jporpha.fitsprint.security.CurrentUser;
 import com.jporpha.fitsprint.service.ActiveSprintResolver;
 import com.jporpha.fitsprint.service.BolinaService;
@@ -24,11 +26,14 @@ public class BolinaServiceImpl implements BolinaService {
     private static final Set<Integer> TAMANHOS_FIBONACCI = Set.of(1, 2, 3, 5, 8, 13, 21);
 
     private final BolinaRepository bolinaRepository;
+    private final DeveloperRepository developerRepository;
     private final ActiveSprintResolver activeSprintResolver;
     private final BolinaMapper mapper;
 
-    public BolinaServiceImpl(BolinaRepository bolinaRepository, ActiveSprintResolver activeSprintResolver, BolinaMapper mapper) {
+    public BolinaServiceImpl(BolinaRepository bolinaRepository, DeveloperRepository developerRepository,
+                              ActiveSprintResolver activeSprintResolver, BolinaMapper mapper) {
         this.bolinaRepository = bolinaRepository;
+        this.developerRepository = developerRepository;
         this.activeSprintResolver = activeSprintResolver;
         this.mapper = mapper;
     }
@@ -101,6 +106,24 @@ public class BolinaServiceImpl implements BolinaService {
     public BolinaResponse atualizarFuera(Long id, boolean fuera) {
         Bolina bolina = buscarEntidade(id);
         bolina.setFuera(fuera);
+        return mapper.toResponse(bolinaRepository.save(bolina));
+    }
+
+    @Override
+    public BolinaResponse atualizarResponsavel(Long id, Long developerId) {
+        Bolina bolina = buscarEntidade(id);
+
+        if (developerId == null) {
+            bolina.setDeveloper(null);
+        } else {
+            Developer developer = developerRepository.findById(developerId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Developer não encontrado: " + developerId));
+            if (!developer.getTeam().getId().equals(bolina.getTeamId())) {
+                throw new BusinessRuleException("Developer não pertence ao mesmo time da bolina");
+            }
+            bolina.setDeveloper(developer);
+        }
+
         return mapper.toResponse(bolinaRepository.save(bolina));
     }
 
