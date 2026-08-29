@@ -34,10 +34,10 @@ A tarefa representa uma card de trabalho dentro do sprint. Seu ciclo de vida aco
 
 | Status | Descrição | Transições permitidas |
 |---|---|---|
-| Por fazer | Tarefa já conhecida no sprint, mas ainda não iniciada. Pode estar priorizada e estimada, aguardando início. | En progreso |
-| En progreso | Tarefa em execução por um developer. Já consome capacidade e compõe a ocupação do responsável. | Bloqueada, Hecha |
-| Bloqueada | Tarefa iniciada, mas temporariamente impedida por alguma dependência, problema ou restrição. | En progreso, Hecha |
-| Hecha | Tarefa concluída no sprint. Não deve mais consumir capacidade operacional ativa. | Sem transições |
+| A Fazer | Tarefa já conhecida no sprint, mas ainda não iniciada. Pode estar priorizada e estimada, aguardando início. | Em Progresso |
+| Em Progresso | Tarefa em execução por um developer. Já consome capacidade e compõe a ocupação do responsável. | Bloqueada, Concluída |
+| Bloqueada | Tarefa iniciada, mas temporariamente impedida por alguma dependência, problema ou restrição. | Em Progresso, Concluída |
+| Concluída | Tarefa concluída no sprint. Não deve mais consumir capacidade operacional ativa. | Sem transições |
 
 ---
 

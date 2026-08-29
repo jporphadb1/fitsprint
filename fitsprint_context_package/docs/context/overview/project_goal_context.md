@@ -36,7 +36,7 @@
 
 - Permitir que o time visualize, em um único sistema, as tarefas do sprint ordenadas por prioridade calculada a partir da razão entre importância e esforço.
 - Dar visibilidade contínua da capacidade disponível do time e de cada developer em story points, respeitando diferenças de senioridade e ritmo de entrega.
-- Mostrar o buffer de horas reservado para urgências e seu consumo ao longo do sprint.
+- Mostrar o percentual da capacidade do sprint reservado para urgências, medido em story points, e seu consumo ao longo do sprint.
 - Fazer com que, ao concluir uma tarefa, cada developer consiga identificar com clareza qual item pode assumir em seguida sem depender sempre de decisão manual do Scrum Master.
 
 ---
@@ -83,7 +83,7 @@ O sistema será usado no dia a dia da operação do time de desenvolvimento para
 
 **Processo atual (como as pessoas fazem hoje):** Atualmente não existe um processo apoiado por sistema para recomendar a próxima tarefa. Quando um developer termina uma atividade, pergunta diretamente ao Scrum Master o que pode assumir a seguir. A decisão depende de leitura manual do contexto, sem visão consolidada de esforço, importância, capacidade disponível e buffer.
 
-**Restrições e regras de negócio relevantes:** A priorização das tarefas é baseada em uma razão entre esforço exigido pela tarefa e seu valor de importância. Tanto esforço quanto importância são avaliados com escala Fibonacci. A capacidade do time é tratada de forma dinâmica por developer, em story points, considerando que um perfil júnior não entrega no mesmo ritmo que um sênior. O buffer representa horas reservadas para absorver urgências durante o sprint. A integração com Azure DevOps foi considerada importante, mas está fora do escopo da primeira versão.
+**Restrições e regras de negócio relevantes:** A priorização das tarefas é baseada em uma razão entre esforço exigido pela tarefa e seu valor de importância. Tanto esforço quanto importância são avaliados com escala Fibonacci. A capacidade do time é tratada de forma dinâmica por developer, em story points, considerando que um perfil júnior não entrega no mesmo ritmo que um sênior. O buffer representa um percentual da capacidade do sprint reservado para absorver urgências durante o sprint, medido em story points. A integração com Azure DevOps foi considerada importante, mas está fora do escopo da primeira versão.
 
 ---
 
