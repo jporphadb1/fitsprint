@@ -1,0 +1,1 @@
+esto es un repo de evidencia para el desafío AI-First, el código real de FitSprint vive en mi repo personal, acá está el CLAUDE.md + los documentos generados con Makuco
