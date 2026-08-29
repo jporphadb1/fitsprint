@@ -32,3 +32,25 @@ Registro incremental: qué se hizo, qué falta, qué se asumió. Un bloque por c
 - No existe endpoint de registro de usuarios; el bootstrap de cuentas se resuelve con el `DataSeeder` en dev. En producción habría que decidir cómo se crean usuarios (fuera de alcance de este scaffold).
 - `TaskStatus` sigue el enum de 3 valores real (`TODO`/`IN_PROGRESS`/`DONE`) de `scope_features_context.md` y `FitSprint_Business_Rules_RAG.md`, ignorando el estado `Bloqueada` de 4 valores que aparece en `glossary_context.md` — el propio RAG marca ese glosario como potencialmente desactualizado.
 - No se generó Dockerfile ni configuración de contenedores (prohibido por `tech_restrictions_context.md`); el deploy apunta al build automático de Railway.
+
+---
+
+## Módulo 1: Backlog priorizado
+
+**Hecho:**
+- `Bolina` CRUD completo sobre el sprint activo del team del usuario autenticado: crear (`POST /api/v1/bolinas`), listar priorizado (`GET /api/v1/bolinas`), buscar por id, editar contenido (`PUT`), soft delete (`DELETE`).
+- Endpoints dedicados de clasificación: `PATCH .../importancia` (manual, ALTA/MEDIA/BAIXA), `PATCH .../prioridade-final` (override manual del orden, nullable para volver a depender del ratio), `PATCH .../estado` (TODO/IN_PROGRESS/DONE), `PATCH .../fuera`.
+- Ratio (`valor / tamanho`) y zona operativa calculados en runtime vía getters `@Transient` en la entidad, nunca persistidos.
+- Validación de tamaño Fibonacci (1,2,3,5,8,13,21) en creación y edición — rechaza con 422 (`BusinessRuleException`).
+- Orden del backlog: prioridad final manual primero (cuando existe), si no ratio descendente, empate por fecha de creación — implementado con un `Comparator` en memoria (no en SQL, para evitar diferencias de `NULLS FIRST/LAST` entre H2 y Postgres).
+- `ActiveSprintResolver` (reutilizable por los próximos módulos) resuelve el sprint `ACTIVE` del team del JWT.
+- Multitenancy: todo acceso pasa por `findByIdAndTeamId`, nunca por `findById` puro — un id de otro team responde 404, no 403 (evita confirmar existencia cross-team).
+- Probado manualmente end-to-end: creación de 3 bolinas con distinto ratio, verificación del orden esperado, override manual de prioridad reordenando por encima del ratio, clasificación de importancia, tamaño inválido → 422, soft delete → desaparece de la lista.
+
+**Falta:**
+- Asignación de responsable (`developerId`) — deliberadamente NO incluida acá; es responsabilidad del módulo Ocupação e avanço (mapa de alocação, atribuir/reatribuir), que se construye después.
+- No hay endpoint para crear/cerrar Sprints (el seeder ya deja uno ACTIVE); no estaba pedido como módulo y lo dejo fuera de alcance.
+
+**Asumido:**
+- El spec dice "PO ou Scrum Master" definen la importância manual, pero el sistema solo modela roles técnicos `SUPER_ADMIN`/`ADMIN`/`USER` (no hay rol PO/SM en el modelo de auth). No restringí estos endpoints por rol más allá de "autenticado + mismo team" — no hay mapeo claro persona-de-negocio → `Role` técnico en los docs. Si se define ese mapeo, hay que agregar `@PreAuthorize` en `BolinaController`.
+- `prioridadeFinal` se asume ascendente (1 = primera en ejecutarse) por convención, ya que el spec no explicita la dirección del número.
