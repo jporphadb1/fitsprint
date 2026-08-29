@@ -71,3 +71,19 @@ Registro incremental: qué se hizo, qué falta, qué se asumió. Un bloque por c
 **Asumido:**
 - `percentualUso` se redondea a 2 decimales para lectura humana; el semáforo se calcula sobre el valor exacto antes de redondear (evita que un redondeo mueva el semáforo de rango, aunque en la práctica la diferencia es despreciable).
 - `bufferDisponivel` puede ser negativo cuando el consumo supera la reserva — se deja así deliberadamente porque es información operativa útil (cuánto se pasó del buffer), y el semáforo ya cubre la señal binaria de alerta.
+
+---
+
+## Módulo 3: Capacidade do time
+
+**Hecho:**
+- `GET /api/v1/capacidade`: una sola vista que trae capacidad total/usada/disponible por developer Y el consolidado del team en la misma respuesta (no dos endpoints separados), tal como pide el spec ("preservar a relação entre visão macro do time e detalhe por developer, sem esconder os desequilíbrios internos").
+- Extraje `OcupacaoCalculator` (nuevo, en `service/`) como pieza compartida: agrupa story points por `developer_id` sobre las bolinas del sprint activo, excluyendo `fuera`/`eliminado`, sin filtrar por estado — esto es literalmente la regla de "ocupação" del módulo 4, pero la necesito ya acá porque "capacidade usada" es la misma cifra. La reutilizo (no la reimplemento) cuando construya el módulo Ocupação e avanço a continuación.
+- Developers sin tareas aparecen con `capacidadeUsada=0` (no quedan fuera del listado ni rompen el cálculo).
+- Probado end-to-end el caso base (sin asignaciones): total 42, usada 0, disponible 42, y cada developer mostrando su propia capacidad total intacta.
+
+**Falta:**
+- Validación con datos reales de `capacidadeUsada > 0` — todavía no hay forma de asignar un developer a una bolina (ese endpoint es del módulo 4, Ocupação e avanço, que sigue). Voy a re-probar este mismo endpoint apenas exista la asignación, antes de dar el módulo 4 por cerrado.
+
+**Asumido:**
+- Igual que en Buffer, `capacidadeDisponivel` puede ser negativo (developer sobrecargado) — mostrarlo así es información, no un error; la señalización explícita de sobrecarga (booleano/flag) es responsabilidad del módulo Ocupação e avanço, no de este.
