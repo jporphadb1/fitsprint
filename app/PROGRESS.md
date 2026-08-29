@@ -54,3 +54,20 @@ Registro incremental: qué se hizo, qué falta, qué se asumió. Un bloque por c
 **Asumido:**
 - El spec dice "PO ou Scrum Master" definen la importância manual, pero el sistema solo modela roles técnicos `SUPER_ADMIN`/`ADMIN`/`USER` (no hay rol PO/SM en el modelo de auth). No restringí estos endpoints por rol más allá de "autenticado + mismo team" — no hay mapeo claro persona-de-negocio → `Role` técnico en los docs. Si se define ese mapeo, hay que agregar `@PreAuthorize` en `BolinaController`.
 - `prioridadeFinal` se asume ascendente (1 = primera en ejecutarse) por convención, ya que el spec no explicita la dirección del número.
+
+---
+
+## Módulo 2: Buffer e urgências
+
+**Hecho:**
+- `GET /api/v1/buffer`: capacidad total del sprint (suma de `capacidadeTotal` de developers del team), buffer reservado (`ceiling(capacidad × %buffer)`), buffer consumido (suma de `tamanho` de bolinas `URGENCIA`/`BUG_NUEVO` del sprint activo, excluyendo `fuera` y `eliminado`, sin importar estado ni responsable), buffer disponible, % de uso y semáforo.
+- Casos especiales del semáforo implementados exactamente como en `FitSprint_Business_Rules_RAG.md`: reservado=0 y consumido=0 → 0% y VERDE; reservado=0 y consumido>0 → sin cálculo de porcentaje (null), directo VERMELHO; en el resto, VERDE <50%, AMARELO 50–100% inclusive, VERMELHO >100%.
+- La clasificación de zona (`CONTINUIDAD_OPERATIVA`/`SPRINT_NORMAL`) ya estaba resuelta desde el módulo base (`TaskType.getZona()`); este módulo solo la consume, no la reimplementa en SQL — evita duplicar la regla de negocio en dos lugares.
+- Probado end-to-end: buffer vacío (0%, VERDE), con una urgencia (AMARELO), sumando otra hasta superar el 100% (VERMELHO), y verificado que marcar una tarea como `fuera` la saca del cálculo de consumido inmediatamente (sin proceso de consolidación aparte, tal como exige la regla de negocio).
+
+**Falta:**
+- Nada pendiente de las 3 features del módulo (zonas, cálculo de buffer, semáforo). La "vista de urgências" (listado filtrado por zona) es explícitamente del módulo 5 (Filtros e vistas), no de este.
+
+**Asumido:**
+- `percentualUso` se redondea a 2 decimales para lectura humana; el semáforo se calcula sobre el valor exacto antes de redondear (evita que un redondeo mueva el semáforo de rango, aunque en la práctica la diferencia es despreciable).
+- `bufferDisponivel` puede ser negativo cuando el consumo supera la reserva — se deja así deliberadamente porque es información operativa útil (cuánto se pasó del buffer), y el semáforo ya cubre la señal binaria de alerta.
