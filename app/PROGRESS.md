@@ -105,3 +105,27 @@ Registro incremental: qué se hizo, qué falta, qué se asumió. Un bloque por c
 
 **Asumido:**
 - No validé "developer pertenece al mismo team que la bolina" contra un segundo team real (no armé un segundo team en el seeder) — la lógica se revisó por código pero solo se probó el camino feliz (mismo team) y el camino de developer inexistente. Si se agrega un segundo team al seeder más adelante, vale la pena reprobar ese caso específico.
+
+---
+
+## Módulo 5: Filtros e vistas (último módulo del roadmap — scaffold completo)
+
+**Hecho:**
+- `GET /api/v1/vistas/principal`: vista priorizada del sprint activo con filtros combinados por AND — `developerId`, `semResponsavel` (bolinas sin responsable, "Sin asignar"), `estado` (TODO/IN_PROGRESS/DONE), `zona` (CONTINUIDAD_OPERATIVA/SPRINT_NORMAL). Todos opcionales vía query params; combinaciones sin resultado devuelven `[]` con 200, nunca error.
+- `GET /api/v1/vistas/urgencias`: solo zona CONTINUIDAD_OPERATIVA del sprint activo.
+- `GET /api/v1/vistas/disponibilidade`: delega 100% a `OcupacaoService.disponibilidadePorDeveloper()` (módulo 4) — no reimplementa el cálculo, tal como corresponde a un módulo "estritamente de consulta".
+- Extraje la regla de ordenación del backlog a `BacklogOrdenacao` (antes vivía privada en `BolinaServiceImpl`) para que este módulo la reutilice sin duplicar la lógica de prioridad manual/ratio/desempate.
+- Ningún endpoint de este controller escribe nada — solo `@GetMapping`, consistente con "módulo estritamente de consulta" del spec (sin edición de estado/prioridad/responsável, sin guardado de vistas, sin exportación, sin kanban).
+- Probado end-to-end con 4 bolinas variadas: filtro simple por estado, por zona, por developer, por "sin asignar", combinación AND de dos filtros, combinación AND sin resultados (lista vacía, sin error), vista de urgencias, y vista de disponibilidad devolviendo la misma forma que el módulo 4.
+
+**Falta:**
+- Nada pendiente de las 5 features nombradas del módulo (incluyendo la negativa explícita: no se implementó edición, guardado de vistas, exportación, kanban ni filtro por fecha — todo eso está fuera de alcance según `scope_features_context.md`).
+
+**Asumido:**
+- Ninguna asunción nueva relevante en este módulo; reutiliza las decisiones ya registradas en Backlog (orden), Buffer/Capacidade (cálculos) y Ocupação (disponibilidade).
+
+---
+
+## Cierre del scaffold inicial
+
+Los 6 bloques pedidos (skeleton transversal + 5 módulos de `scope_features_context.md`) están implementados, compilados y probados manualmente end-to-end sobre H2 en cada commit. Pendiente real para un siguiente paso: frontend estático (hoy es un placeholder), tests automatizados, y las decisiones marcadas como "Asumido" en cada bloque — en particular el mapeo entre roles técnicos (`SUPER_ADMIN`/`ADMIN`/`USER`) y las personas de negocio (PO/Scrum Master/Developer) si se quiere restringir endpoints por rol más adelante.

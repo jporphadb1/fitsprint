@@ -14,8 +14,8 @@ import com.jporpha.fitsprint.repository.BolinaRepository;
 import com.jporpha.fitsprint.repository.DeveloperRepository;
 import com.jporpha.fitsprint.security.CurrentUser;
 import com.jporpha.fitsprint.service.ActiveSprintResolver;
+import com.jporpha.fitsprint.service.BacklogOrdenacao;
 import com.jporpha.fitsprint.service.BolinaService;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import org.springframework.stereotype.Service;
@@ -60,7 +60,7 @@ public class BolinaServiceImpl implements BolinaService {
     public List<BolinaResponse> listarPriorizado() {
         Sprint sprintAtivo = activeSprintResolver.resolve(CurrentUser.teamId());
         return bolinaRepository.findAllBySprintIdAndEliminadoFalse(sprintAtivo.getId()).stream()
-                .sorted(comparadorBacklog())
+                .sorted(BacklogOrdenacao.porPrioridade())
                 .map(mapper::toResponse)
                 .toList();
     }
@@ -143,17 +143,5 @@ public class BolinaServiceImpl implements BolinaService {
         if (!TAMANHOS_FIBONACCI.contains(tamanho)) {
             throw new BusinessRuleException("Tamanho deve seguir a escala Fibonacci: " + TAMANHOS_FIBONACCI);
         }
-    }
-
-    /**
-     * Regra de ordenação: prioridade final manual primeiro (quando existir), depois
-     * ratio decrescente, com data de criação como desempate final.
-     */
-    private Comparator<Bolina> comparadorBacklog() {
-        return Comparator
-                .<Bolina>comparingInt(b -> b.getPrioridadeFinal() != null ? 0 : 1)
-                .thenComparingInt(b -> b.getPrioridadeFinal() != null ? b.getPrioridadeFinal() : 0)
-                .thenComparing(Comparator.comparingDouble(Bolina::getRatio).reversed())
-                .thenComparing(Bolina::getDataCriacao);
     }
 }
