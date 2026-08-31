@@ -1,0 +1,59 @@
+spring:
+  application:
+    name: fitsprint
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:h2:mem:fitsprint;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+fitsprint:
+  jwt:
+    secret: ${JWT_SECRET:ZGV2LW9ubHktc2VjcmV0LWtleS1kby1uYW8tdXNhci1lbS1wcm9kdWNhby1taW4tMzItYnl0ZXM=}
+    expiration-days: 7
+  seed:
+    enabled: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+fitsprint:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-days: 7
+  seed:
+    enabled: false
+
+server:
+  port: ${PORT:8080}
